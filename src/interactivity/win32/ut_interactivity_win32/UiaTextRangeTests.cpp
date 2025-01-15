@@ -281,7 +281,7 @@ class UiaTextRangeTests
     SCREEN_INFORMATION* _pScreenInfo;
     TextBuffer* _pTextBuffer;
     UiaTextRange* _range;
-    IUiaData* _pUiaData;
+    Microsoft::Console::Render::IRenderData* _pUiaData;
 
     struct ExpectedResult
     {
@@ -340,7 +340,6 @@ class UiaTextRangeTests
         auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
-        _state->PrepareGlobalFont();
         _state->PrepareGlobalScreenBuffer();
         _state->PrepareNewTextBufferInfo();
 
@@ -361,7 +360,7 @@ class UiaTextRangeTests
         for (auto i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
         {
             const std::wstring_view glyph{ i % 2 == 0 ? L" " : L"X" };
-            auto& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetMutableRowByOffset(i);
             const auto width = row.size();
 
             for (uint16_t x = 0; x < width; ++x)
@@ -377,7 +376,6 @@ class UiaTextRangeTests
     {
         _state->CleanupNewTextBufferInfo();
         _state->CleanupGlobalScreenBuffer();
-        _state->CleanupGlobalFont();
         delete _state;
         delete _range;
 
@@ -489,7 +487,7 @@ class UiaTextRangeTests
         // Let's start by filling the text buffer with something useful:
         for (auto i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
-            auto& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetMutableRowByOffset(i);
             const auto width = row.size();
 
             for (uint16_t x = 0; x < width; ++x)
@@ -577,7 +575,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 2", toString(textUnit)));
-                const til::point end = { boundaries.start.X + 1, boundaries.start.Y };
+                const til::point end = { boundaries.start.x + 1, boundaries.start.y };
                 verifyExpansion(textUnit, boundaries.start, end);
             }
 
@@ -589,7 +587,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 4", toString(textUnit)));
-                const til::point end = { boundaries.end.X + 1, boundaries.end.Y };
+                const til::point end = { boundaries.end.x + 1, boundaries.end.y };
                 verifyExpansion(textUnit, boundaries.start, end);
             }
 
@@ -597,7 +595,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 5", toString(textUnit)));
-                const til::point start = { boundaries.start.X + 1, boundaries.start.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
                 verifyExpansion(textUnit, start, start);
             }
 
@@ -605,8 +603,8 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 6", toString(textUnit)));
-                const til::point start = { boundaries.start.X + 1, boundaries.start.Y };
-                const til::point end = { start.X + 1, start.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
+                const til::point end = { start.x + 1, start.y };
                 verifyExpansion(textUnit, start, end);
             }
 
@@ -614,7 +612,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 7", toString(textUnit)));
-                const til::point start = { boundaries.start.X + 1, boundaries.start.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
                 verifyExpansion(textUnit, start, boundaries.end);
             }
 
@@ -622,8 +620,8 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 8", toString(textUnit)));
-                const til::point start = { boundaries.start.X + 1, boundaries.start.Y };
-                const til::point end = { boundaries.end.X + 1, boundaries.end.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
+                const til::point end = { boundaries.end.x + 1, boundaries.end.y };
                 verifyExpansion(textUnit, start, end);
             }
         }
@@ -725,7 +723,7 @@ class UiaTextRangeTests
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveTest> testData
@@ -813,7 +811,7 @@ class UiaTextRangeTests
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveTest> testData
@@ -844,13 +842,13 @@ class UiaTextRangeTests
 
             MoveTest{
                 L"can move backward from bottom row",
-                {0, documentEnd.Y},
-                {lastColumnIndex, documentEnd.Y},
+                {0, documentEnd.y},
+                {lastColumnIndex, documentEnd.y},
                 -3,
                 {
                     -3,
-                    {0, documentEnd.Y - 3},
-                    {0, documentEnd.Y - 3}
+                    {0, documentEnd.y - 3},
+                    {0, documentEnd.y - 3}
                 }
             },
 
@@ -901,7 +899,7 @@ class UiaTextRangeTests
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const til::point documentEnd{ _pTextBuffer->GetSize().RightInclusive(), _pTextBuffer->GetLastNonSpaceCharacter().Y };
+        const til::point documentEnd{ _pTextBuffer->GetSize().RightInclusive(), _pTextBuffer->GetLastNonSpaceCharacter().y };
 
         // clang-format off
         const std::array testData
@@ -954,7 +952,7 @@ class UiaTextRangeTests
                 {
                     1,
                     {0,0},
-                    {0, documentEnd.Y + 1}
+                    {0, documentEnd.y + 1}
                 }
             },
 
@@ -973,40 +971,40 @@ class UiaTextRangeTests
 
             MoveEndpointTest{
                 L"can't move _end past the beginning of the document when _end is positioned at the end",
-                {0, documentEnd.Y},
-                {0, documentEnd.Y + 1},
+                {0, documentEnd.y},
+                {0, documentEnd.y + 1},
                 1,
                 TextPatternRangeEndpoint_End,
                 {
                     0,
-                    {0, documentEnd.Y},
-                    {0, documentEnd.Y + 1},
+                    {0, documentEnd.y},
+                    {0, documentEnd.y + 1},
                 }
             },
 
             MoveEndpointTest{
                 L"can partially move _end to the end of the document when it is closer than the move count requested",
                 {0, 0},
-                {lastColumnIndex - 3, documentEnd.Y},
+                {lastColumnIndex - 3, documentEnd.y},
                 5,
                 TextPatternRangeEndpoint_End,
                 {
                     4,
                     {0, 0},
-                    {0, documentEnd.Y + 1},
+                    {0, documentEnd.y + 1},
                 }
             },
 
             MoveEndpointTest{
                 L"can't move _start past the end of the document",
-                {lastColumnIndex - 4, documentEnd.Y},
-                {0, documentEnd.Y + 1},
+                {lastColumnIndex - 4, documentEnd.y},
+                {0, documentEnd.y + 1},
                 5,
                 TextPatternRangeEndpoint_Start,
                 {
                     5,
-                    {0, documentEnd.Y + 1},
-                    {0, documentEnd.Y + 1},
+                    {0, documentEnd.y + 1},
+                    {0, documentEnd.y + 1},
                 }
             },
 
@@ -1047,7 +1045,7 @@ class UiaTextRangeTests
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveEndpointTest> testData
@@ -1185,7 +1183,7 @@ class UiaTextRangeTests
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveEndpointTest> testData =
@@ -1291,7 +1289,7 @@ class UiaTextRangeTests
         // at the end exclusive, the UTR should refuse to move past
         // the end.
         const auto lastNonspaceCharPos{ _pTextBuffer->GetLastNonSpaceCharacter() };
-        const til::point documentEnd{ 0, lastNonspaceCharPos.Y + 1 };
+        const til::point documentEnd{ 0, lastNonspaceCharPos.y + 1 };
 
         // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
@@ -1326,7 +1324,7 @@ class UiaTextRangeTests
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const til::point documentEndInclusive{ bufferSize.right - 1, _pTextBuffer->GetLastNonSpaceCharacter().Y };
+        const til::point documentEndInclusive{ bufferSize.right - 1, _pTextBuffer->GetLastNonSpaceCharacter().y };
         const til::point documentEndExclusive{ bufferSize.left, documentEndInclusive.y + 1 };
 
         const til::point lastLineStart{ bufferSize.left, documentEndInclusive.y };
@@ -1648,26 +1646,20 @@ class UiaTextRangeTests
             Log::Comment(L"Test Underline");
 
             // Single underline
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             updateBuffer(attr);
             VARIANT result;
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Single, result.lVal);
 
-            // Double underline (double supersedes single)
-            attr.SetDoublyUnderlined(true);
-            updateBuffer(attr);
-            VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
-            VERIFY_ARE_EQUAL(TextDecorationLineStyle_Double, result.lVal);
-
-            // Double underline (double on its own)
-            attr.SetUnderlined(false);
+            // Double underline (new style supersedes the old one)
+            attr.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Double, result.lVal);
 
             // No underline
-            attr.SetDoublyUnderlined(false);
+            attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_None, result.lVal);
@@ -1695,9 +1687,9 @@ class UiaTextRangeTests
             THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit_Line));
 
             // set first cell as underlined, but second cell as not underlined
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             _pTextBuffer->Write({ attr }, { 0, 0 });
-            attr.SetUnderlined(false);
+            attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
             _pTextBuffer->Write({ attr }, { 1, 0 });
 
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
@@ -1928,7 +1920,7 @@ class UiaTextRangeTests
             auto fill{ true };
             while (iter.Pos() != docEnd)
             {
-                if (iter.Pos().X == bufferSize.left)
+                if (iter.Pos().x == bufferSize.left)
                 {
                     fill = true;
                 }

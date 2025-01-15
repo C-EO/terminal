@@ -15,36 +15,28 @@ Author(s):
 #pragma once
 
 #include "../renderer/inc/IRenderData.hpp"
-#include "../types/inc/colorTable.hpp"
-#include "../types/IUiaData.h"
 
 class RenderData final :
-    public Microsoft::Console::Render::IRenderData,
-    public Microsoft::Console::Types::IUiaData
+    public Microsoft::Console::Render::IRenderData
 {
 public:
-#pragma region BaseData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     til::point GetTextBufferEndPosition() const noexcept override;
-    const TextBuffer& GetTextBuffer() const noexcept override;
+    TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
 
-    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+    std::span<const til::point_span> GetSelectionSpans() const noexcept override;
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
-#pragma endregion
 
-#pragma region IRenderData
     til::point GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
-
-    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
@@ -54,17 +46,15 @@ public:
     const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
 
     const std::vector<size_t> GetPatternId(const til::point location) const override;
-#pragma endregion
 
-#pragma region IUiaData
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     const bool IsSelectionActive() const override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    const til::point GetSelectionAnchor() const noexcept;
-    const til::point GetSelectionEnd() const noexcept;
-    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr);
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override;
+    const til::point_span* GetSearchHighlightFocused() const noexcept override;
+    const til::point GetSelectionAnchor() const noexcept override;
+    const til::point GetSelectionEnd() const noexcept override;
     const bool IsUiaDataInitialized() const noexcept override { return true; }
-#pragma endregion
 };
